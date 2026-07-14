@@ -1,5 +1,5 @@
 {
-  "name": "my-app-functions",
+  "name": "app-functions-cli-template",
   "version": "1.0.0",
   "private": true,
   "type": "module",
@@ -19,13 +19,13 @@
     "format": "prettier --write ."
   },
   "devDependencies": {
-    "@eslint/js": "^10.0.1",
     "@salla.sa/app-functions-types": "^0.2.0",
+    "@eslint/js": "^10.0.1",
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.8",
     "eslint": "^9.39.2",
     "eslint-config-prettier": "^10.1.8",
     "prettier": "^3.8.3",
-    "typescript": "^5.9.3",
-    "typescript-eslint": "^8.60.1",
-    "vitest": "^4.1.8"
+    "typescript-eslint": "^8.60.1"
   }
 }
