@@ -1,4 +1,4 @@
-import type { FunctionResponse, Order } from '../types';
+import type { FunctionResponse, Order } from '@salla.sa/app-functions-types';
 
 // `context` is typed as `Order`; the explicit `: FunctionResponse` return type
 // makes the editor red-line any return that isn't a valid Success/Error response.

@@ -1,4 +1,4 @@
-import type { FunctionResponse, Customer } from '../types';
+import type { Customer, FunctionResponse } from '@salla.sa/app-functions-types';
 
 export const customerLogin = (context: Customer): FunctionResponse => {
   const customer = context.payload.data;

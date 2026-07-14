@@ -1,5 +1,5 @@
-import { expect, test, describe } from 'vitest';
-import type { Order, Customer } from '../src/types';
+import type { Customer, Order } from '@salla.sa/app-functions-types';
+import { describe, expect, test } from 'vitest';
 import events from '../src';
 
 // Minimal fixtures shaped like the ctx the platform SDK passes to a handler.

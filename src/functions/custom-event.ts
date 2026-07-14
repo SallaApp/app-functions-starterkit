@@ -1,4 +1,4 @@
-import type { FunctionResponse } from '../types';
+import type { FunctionResponse } from '@salla.sa/app-functions-types';
 
 export const customEvent = (context: unknown): FunctionResponse => {
   const event = context as { name: string };

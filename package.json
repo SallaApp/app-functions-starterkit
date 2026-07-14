@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "Example App Function project. Multi-file, types-only, builds to one dist that exports the events map.",
+  "description": "Template to create App Functions with Salla CLI.",
   "main": "dist/index.js",
   "exports": {
     ".": "./dist/index.js"
@@ -27,5 +27,8 @@
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.60.1",
     "vitest": "^4.1.8"
+  },
+  "dependencies": {
+    "@salla.sa/app-functions-types": "^0.2.0"
   }
 }

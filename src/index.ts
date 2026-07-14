@@ -1,7 +1,7 @@
 import { customEvent } from './functions/custom-event';
 import { customerLogin } from './functions/customer-login';
 import { orderCreated } from './functions/order-created';
-import type { Events } from './types';
+import type { Events } from '@salla.sa/app-functions-types';
 
 /** Maps each Salla event name to the handler that runs when it fires.
  * The `satisfies Events` check keeps the keys and handler signatures in sync
