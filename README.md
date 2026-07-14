@@ -18,19 +18,23 @@ response. That's the whole contract.
 
 ```ts
 // src/index.ts
+import type { DefineEvents } from '@salla.sa/app-functions-types';
 import { orderCreated } from './functions/order-created';
-import type { Events } from './types';
 
-const events = {
+// The types package ships no runtime code, so provide the identity
+// implementation and borrow its `DefineEvents` signature for type-safety.
+const defineEvents: DefineEvents = (events) => events;
+
+const events = defineEvents({
   'order.created': orderCreated
-} satisfies Events;
+});
 
 export default events;
 ```
 
 ```ts
 // src/functions/order-created.ts
-import type { FunctionResponse, Order } from '../types';
+import type { FunctionResponse, Order } from '@salla.sa/app-functions-types';
 
 export const orderCreated = (context: Order): FunctionResponse => {
   const order = context.payload.data;
@@ -53,7 +57,7 @@ export const orderCreated = (context: Order): FunctionResponse => {
 };
 ```
 
-Types come from `@salla.sa/functions-types` — a **types-only** package (no
+Types come from `@salla.sa/app-functions-types` — a **types-only** package (no
 runtime code). You author against those shapes; Salla injects the real SDK at
 deploy time.
 
@@ -84,8 +88,7 @@ src/
   functions/            # one file per event handler
     order-created.ts
     customer-login.ts
-    product-created.ts
-  types/                # App Function type definitions
+    custom-event.ts
 test/
   index.spec.ts         # example tests for the handlers
 ```
