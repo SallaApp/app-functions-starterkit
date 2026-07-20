@@ -6,7 +6,7 @@ export const orderCreated = (context: Order): FunctionResponse => {
   const order = context.payload.data;
   console.log('Order Created Event Invoked');
   console.info('Order created event invoked with data:', order.id);
-
+  console.warn('Warn log invoked with data:', order.id);
   const items = order.items;
   const isItemsPresent = items && items.length > 0;
   if (!isItemsPresent) {
