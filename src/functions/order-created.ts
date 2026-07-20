@@ -4,28 +4,36 @@ import type { FunctionResponse, Order } from '@salla.sa/app-functions-types';
 // makes the editor red-line any return that isn't a valid Success/Error response.
 export const orderCreated = (context: Order): FunctionResponse => {
   const order = context.payload.data;
+  console.log('Order Created Event Invoked');
+  console.info('Order created event invoked with data:', order.id);
 
-  // Returning an error response is just as easy: { success:false, message, error }.
-  if (order.items.length === 0) {
+  const items = order.items;
+  const isItemsPresent = items && items.length > 0;
+  if (!isItemsPresent) {
+    console.error('Order created event invoked without items');
     return {
       success: false,
-      status: 422,
-      message: 'Order has no items',
-      error: { message: 'Order has no items' }
+      status: 400,
+      message: 'No items found in the order',
+      error: {
+        fields: {
+          items: ['The order must contain at least one item.']
+        },
+        message: 'The order does not contain any items.'
+      }
     };
   }
 
-  const total = `${order.amounts.total.amount} ${order.amounts.total.currency}`;
+  console.log(`Order created with ${items.length} items`);
+
   return {
     success: true,
     status: 200,
-    message: `Order ${order.reference_id} received (${total})`,
+    message: `Order ${order.reference_id} received`,
     data: {
       orderId: order.id,
       reference: order.reference_id,
-      total,
-      customer: `${order.customer.first_name} ${order.customer.last_name}`,
-      itemCount: order.items.length
+      customer: `${order.customer.first_name} ${order.customer.last_name}`
     }
   };
 };
