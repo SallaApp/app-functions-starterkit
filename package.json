@@ -19,6 +19,9 @@
     "lint": "eslint --cache .",
     "format": "prettier --write ."
   },
+  "engines": {
+    "node": ">=20.19.0"
+  },
   "devDependencies": {
     "@salla.sa/cli": "^3.2.30",
     "@salla.sa/app-functions-types": "^0.2.0",

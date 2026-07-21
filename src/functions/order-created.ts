@@ -33,6 +33,7 @@ export const orderCreated = (context: Order): FunctionResponse => {
     data: {
       orderId: order.id,
       reference: order.reference_id,
+      itemCount: Array.isArray(order.items) ? order.items.length : 0,
       customer: `${order.customer.first_name} ${order.customer.last_name}`
     }
   };
