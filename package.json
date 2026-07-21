@@ -24,7 +24,7 @@
   },
   "devDependencies": {
     "@salla.sa/cli": "^3.2.30",
-    "@salla.sa/app-functions-types": "^0.2.0",
+    "@salla.sa/app-functions-types": "^0.3.0",
     "@eslint/js": "^10.0.1",
     "eslint": "^9.39.2",
     "eslint-config-prettier": "^10.1.8",
