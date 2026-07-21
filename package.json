@@ -12,6 +12,7 @@
     "dist"
   ],
   "scripts": {
+    "postinstall": "npm install -g @salla.sa/cli",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",

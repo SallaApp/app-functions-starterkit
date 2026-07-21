@@ -1,19 +1,40 @@
+/**
+ * App Functions entry point.
+ *
+ * This file exports the single **events map** that Salla loads at runtime.
+ * The map binds each Salla event name to the handler that should run when that
+ * event fires inside a merchant's store. Everything else in `src/functions/` is
+ * just the handlers this map points at.
+ */
 import type { DefineEvents } from '@salla.sa/app-functions-types';
-import { customEvent } from './functions/custom-event';
 import { customerLogin } from './functions/customer-login';
 import { orderCreated } from './functions/order-created';
 
-/** The types package ships no runtime code, so we provide the trivial identity
- * implementation and borrow its `DefineEvents` signature — any key that isn't a
- * known Salla event or a valid `custom.event.*` will not allow compilation. */
+/**
+ * `@salla.sa/app-functions-types` is a *types-only* package — it ships no
+ * runtime code. So `defineEvents` is just the identity function, but typed with
+ * the package's `DefineEvents` signature so the compiler enforces the event-map
+ * contract for us:
+ *
+ *   • keys must be a known Salla event (e.g. `order.created`, `customer.login`,
+ *     `product.created`, …) an unrecognized key is a compile error — the map's type
+ *     collapses to `never`, so `npm run typecheck` fails before you ever deploy a typo.
+ */
 const defineEvents: DefineEvents = (events) => events;
 
-/** Maps each Salla event name to the app function handler that runs when it fires. */
+/**
+ * The events map. To wire up a new event:
+ *   1. create `src/functions/<your-handler>.ts` exporting a handler function;
+ *   2. import it above;
+ *   3. add a `'<salla.event>': yourHandler` entry below.
+ *
+ * A handler is only ever invoked for the event it's registered against, so the
+ * `context` argument's type is pinned by the event name.
+ */
 const events = defineEvents({
   'order.created': orderCreated,
-  'customer.login': customerLogin,
-  'custom.event.custom-event': customEvent
+  'customer.login': customerLogin
 });
 
-// Default export is the registry the runtime uses to dispatch incoming events.
+// The Salla runtime imports this default export and dispatches every event to its handler.
 export default events;

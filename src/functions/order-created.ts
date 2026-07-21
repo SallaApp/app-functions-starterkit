@@ -1,31 +1,26 @@
 import type { FunctionResponse, Order } from '@salla.sa/app-functions-types';
 
-// `context` is typed as `Order`; the explicit `: FunctionResponse` return type
-// makes the editor red-line any return that isn't a valid Success/Error response.
+/**
+ * Handler for the `order.created` event.
+ *
+ * Every handler follows the same contract: it receives the typed event
+ * `context` (the order lives at `context.payload.data`) and returns a
+ * `FunctionResponse` — either a success or an error. Handlers may also be
+ * `async` and return a `Promise<FunctionResponse>`.
+ */
 export const orderCreated = (context: Order): FunctionResponse => {
   const order = context.payload.data;
-  console.log('Order Created Event Invoked');
-  console.info('Order created event invoked with data:', order.id);
-  console.warn('Warn log invoked with data:', order.id);
-  const items = order.items;
-  const isItemsPresent = items && items.length > 0;
-  if (!isItemsPresent) {
-    console.error('Order created event invoked without items');
-    return {
-      success: false,
-      status: 400,
-      message: 'No items found in the order',
-      error: {
-        fields: {
-          items: ['The order must contain at least one item.']
-        },
-        message: 'The order does not contain any items.'
-      }
-    };
+
+  // Return an error response when the payload isn't usable.
+  if (!order.id) {
+    const message = 'Order ID is missing from the payload';
+    return { success: false, status: 400, message, error: { message } };
   }
 
-  console.log(`Order created with ${items.length} items`);
+  // Do your work here — call an API, enqueue a job, enrich the order, …
+  console.log(`Order created with ID: ${order.id}`);
 
+  // Return a success response. `data` is free-form.
   return {
     success: true,
     status: 200,
@@ -33,6 +28,7 @@ export const orderCreated = (context: Order): FunctionResponse => {
     data: {
       orderId: order.id,
       reference: order.reference_id,
+      itemCount: order.items.length,
       customer: `${order.customer.first_name} ${order.customer.last_name}`
     }
   };
