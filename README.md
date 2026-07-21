@@ -39,14 +39,13 @@ import type { FunctionResponse, Order } from '@salla.sa/app-functions-types';
 export const orderCreated = (context: Order): FunctionResponse => {
   const order = context.payload.data;
 
-  if (order.items.length === 0) {
-    return {
-      success: false,
-      status: 422,
-      message: 'Order has no items',
-      error: { message: 'Order has no items' }
-    };
+  // Validate, then return an error response the platform can log.
+  if (!order.id) {
+    const message = 'Order ID is missing from the payload';
+    return { success: false, status: 400, message, error: { message } };
   }
+
+  // ...your logic here (call an API, enqueue a job, enrich the order, …).
 
   return {
     success: true,
@@ -63,22 +62,34 @@ deploy time.
 
 ## Getting started
 
-This template is designed to be used with the Salla CLI. Install it once:
+This template is designed to be used with the [Salla CLI](https://www.npmjs.com/package/@salla.sa/cli).
+Every command for this template is run through the CLI as
+**`salla app-functions <command>`**.
+
+Installing dependencies automatically installs the CLI globally — the
+`postinstall` hook runs `npm install -g @salla.sa/cli`, so it fires no matter
+which package manager you use:
 
 ```bash
-npm install -g @salla.sa/cli
+pnpm install     # (or npm install / yarn install)
+                 # → runs postinstall → globally installs @salla.sa/cli
 ```
 
-Then scaffold, develop, and deploy through the CLI:
+Once the CLI is on your `PATH`, build, deploy, and monitor through it:
 
 ```bash
-salla app-functions create      # scaffold a new project from this template
-npm install                     # install dependencies
-salla app-functions dev         # run locally against sample events
-salla app-functions deploy      # build and ship to Salla
+salla app-functions build              # build the code into a dist file
+salla app-functions deploy <app-id>    # deploy the dist file to the given app
+salla app-functions listen <app-id>    # stream live logs from the app functions
 ```
 
-> The exact CLI commands may evolve — run `salla --help` for the current list.
+`deploy` runs the build for you, so `salla app-functions deploy <app-id>` works
+on its own. It's still worth running `salla app-functions build` (and
+`npm run typecheck`) first, though — building locally surfaces type and compile
+errors up front, so you catch them before shipping rather than mid-deploy.
+
+> The exact CLI commands may evolve — run `salla app-functions --help` for the
+> current list.
 
 ## Project structure
 
@@ -88,7 +99,6 @@ src/
   functions/            # one file per event handler
     order-created.ts
     customer-login.ts
-    custom-event.ts
 test/
   index.spec.ts         # example tests for the handlers
 ```
@@ -108,7 +118,12 @@ test/
 1. Add or rename handlers under `src/functions/`.
 2. Register them in the `events` map in `src/index.ts`.
 3. Update `test/index.spec.ts` to cover your handlers.
-4. Deploy with the CLI.
+4. Build with `salla app-functions build` (and `npm run typecheck`) to catch
+   type and compile errors locally.
+5. Deploy with `salla app-functions deploy <app-id>` — it also builds as part of
+   the deploy, so building first is about catching errors early, not a hard
+   requirement.
+6. Watch it run live with `salla app-functions listen <app-id>`.
 
 ## License
 

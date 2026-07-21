@@ -12,11 +12,15 @@
     "dist"
   ],
   "scripts": {
+    "postinstall": "npm install -g @salla.sa/cli",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "eslint --cache .",
     "format": "prettier --write ."
+  },
+  "engines": {
+    "node": ">=20.19.0"
   },
   "devDependencies": {
     "@salla.sa/cli": "^3.2.30",
