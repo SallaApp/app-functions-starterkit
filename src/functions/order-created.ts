@@ -14,11 +14,16 @@ export const orderCreated = (context: Order): FunctionResponse => {
   // Return an error response when the payload isn't usable.
   if (!order.id) {
     const message = 'Order ID is missing from the payload';
+    console.error(message);
     return { success: false, status: 400, message, error: { message } };
   }
 
   // Do your work here — call an API, enqueue a job, enrich the order, …
   console.log(`Order created with ID: ${order.id}`);
+
+  if (!Array.isArray(order.items) || order.items.length <= 0) {
+    console.warn('Order has no items');
+  }
 
   // Return a success response. `data` is free-form.
   return {
@@ -28,7 +33,6 @@ export const orderCreated = (context: Order): FunctionResponse => {
     data: {
       orderId: order.id,
       reference: order.reference_id,
-      itemCount: order.items.length,
       customer: `${order.customer.first_name} ${order.customer.last_name}`
     }
   };
