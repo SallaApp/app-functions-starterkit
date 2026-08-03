@@ -12,7 +12,6 @@
     "dist"
   ],
   "scripts": {
-    "postinstall": "npm install -g @salla.sa/cli",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -22,8 +21,10 @@
   "engines": {
     "node": ">=20.19.0"
   },
+  "dependencies": {
+    "@salla.sa/cli": "^3.2.30"
+  },
   "devDependencies": {
-    "@salla.sa/cli": "^3.2.30",
     "@salla.sa/app-functions-types": "^0.4.0",
     "@eslint/js": "^10.0.1",
     "eslint": "^9.39.2",
