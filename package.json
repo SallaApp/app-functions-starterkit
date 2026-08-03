@@ -1,9 +1,9 @@
 {
-  "name": "app-functions-cli-template",
+  "name": "app-functions-starter-kit",
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "Template to create App Functions with Salla CLI.",
+  "description": "Starter kit to create App Functions with Salla CLI.",
   "main": "dist/index.js",
   "exports": {
     ".": "./dist/index.js"
