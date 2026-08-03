@@ -1,6 +1,6 @@
-# Salla App Functions — Template
+# Salla App Functions — Starterkit
 
-> **This is a template repository.** It's a starting point for building a Salla
+> **This is a starterkit repository.** It's a starting point for building a Salla
 > **App Function**, not a finished app. Clone or scaffold from it with
 > [`@salla.sa/cli`](https://www.npmjs.com/package/@salla.sa/cli), replace the
 > example handlers with your own, and ship.
@@ -62,8 +62,8 @@ deploy time.
 
 ## Getting started
 
-This template is designed to be used with the [Salla CLI](https://www.npmjs.com/package/@salla.sa/cli).
-Every command for this template is run through the CLI as
+This starterkit is designed to be used with the [Salla CLI](https://www.npmjs.com/package/@salla.sa/cli).
+Every command for this starterkit is run through the CLI as
 **`salla app-functions <command>`**.
 
 Installing dependencies automatically installs the CLI globally — the
