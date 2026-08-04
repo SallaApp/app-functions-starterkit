@@ -5,7 +5,7 @@ import events from '../src';
 /*
  * These tests exercise the handlers exactly the way the platform does: they
  * look each handler up in the exported `events` map and call it with a context
- * object. Use them as a template — copy a block, swap in your event, and assert
+ * object. Use them as a starter kit — copy a block, swap in your event, and assert
  * on the response your handler returns.
  *
  * The tricky part of testing handlers is that the real webhook payloads have
@@ -22,10 +22,10 @@ type CustomerData = Customer['payload']['data'];
  *  the fields it DOES provide are still checked against the real payload types. */
 type DeepPartial<T> = {
   [K in keyof T]?: T[K] extends (infer U)[]
-    ? DeepPartial<U>[]
-    : T[K] extends object
-      ? DeepPartial<T[K]>
-      : T[K];
+  ? DeepPartial<U>[]
+  : T[K] extends object
+  ? DeepPartial<T[K]>
+  : T[K];
 };
 
 /** Confines the "fill in the fields I didn't bother to set" cast to one spot,

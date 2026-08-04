@@ -1,9 +1,9 @@
 {
-  "name": "app-functions-cli-template",
+  "name": "app-functions-starter-kit",
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "Template to create App Functions with Salla CLI.",
+  "description": "Starter kit to create App Functions with Salla CLI.",
   "main": "dist/index.js",
   "exports": {
     ".": "./dist/index.js"
@@ -12,7 +12,6 @@
     "dist"
   ],
   "scripts": {
-    "postinstall": "npm install -g @salla.sa/cli",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -22,9 +21,11 @@
   "engines": {
     "node": ">=20.19.0"
   },
+  "dependencies": {
+    "@salla.sa/cli": "^3.2.30"
+  },
   "devDependencies": {
-    "@salla.sa/cli": "^3.2.30",
-    "@salla.sa/app-functions-types": "^0.3.0",
+    "@salla.sa/app-functions-types": "^0.5.0",
     "@eslint/js": "^10.0.1",
     "eslint": "^9.39.2",
     "eslint-config-prettier": "^10.1.8",
