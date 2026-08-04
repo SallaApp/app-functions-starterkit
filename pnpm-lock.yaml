@@ -16,8 +16,8 @@ importers:
         specifier: ^10.0.1
         version: 10.0.1(eslint@9.39.5)
       '@salla.sa/app-functions-types':
-        specifier: ^0.4.0
-        version: 0.4.0
+        specifier: ^0.5.0
+        version: 0.5.0
       eslint:
         specifier: ^9.39.2
         version: 9.39.5
@@ -400,8 +400,8 @@ packages:
   '@rolldown/pluginutils@1.0.1':
     resolution: {integrity: sha512-2j9bGt5Jh8hj+vPtgzPtl72j0yRxHAyumoo6TNfAjsLB04UtpSvPbPcDcBMxz7n+9CYB0c1GxQFxYRg2jimqGw==}
 
-  '@salla.sa/app-functions-types@0.4.0':
-    resolution: {integrity: sha512-JJRqT2vaIZKFuVVNqOT/b4hgkPdFga8QMdL8xlV4dbMN0Jg2Wqv6o7m1LR3TYMAOBz1mxDBputLwayByeetpZA==}
+  '@salla.sa/app-functions-types@0.5.0':
+    resolution: {integrity: sha512-6Ay30KC4RGv73R24slXbKEel9D/xaB4PfRxWjsEUdW5NiQguE73LD2NR2eaViZxADoj0ZUkSlKyt38qszDjEMw==}
 
   '@salla.sa/cli@3.2.42':
     resolution: {integrity: sha512-ZsW3BbRU+bxBOpOQTImGEZkCJNU7pVhx+LVmocoG2EFewwjH5CfTakdHen64BfXevBPwDD+nCX98yoVrVOwviA==}
@@ -1701,7 +1701,7 @@ snapshots:
 
   '@rolldown/pluginutils@1.0.1': {}
 
-  '@salla.sa/app-functions-types@0.4.0': {}
+  '@salla.sa/app-functions-types@0.5.0': {}
 
   '@salla.sa/cli@3.2.42':
     dependencies:
