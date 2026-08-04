@@ -1,5 +1,3 @@
-
-
 <div align="center">
 
 # Salla App Functions — Starter Kit
@@ -83,7 +81,12 @@ execution time, and resources — see [the overview](https://docs.salla.dev/1726
 ### 1. Prerequisites
 
 - **Node.js ≥ 22.12** — the Salla CLI requires it (this project's own floor is 20.19).
-- A [Salla Partner account](https://salla.partners/) with an app created in the portal.
+- A [Salla Partner account](https://salla.partners/).
+- **A Partner app** — App Functions always run on behalf of an app, so you need one before
+  anything else here works. Create it either way:
+  - **Partner Portal** — [salla.partners](https://salla.partners/) → _My Apps_ → _Create App_.
+  - **CLI** — `salla app create` walks you through the same thing from the terminal
+    (install the CLI and run `salla login` first — see [Install](#2-install) below).
 - A [demo store](https://salla.dev/blog/how-to-test-your-app-using-salla-demo-stores/) with
   your app installed.
 - The **app scopes** your events need (e.g. `orders.read`), enabled on the app.
@@ -100,12 +103,21 @@ The CLI is a global binary — installing it globally is what puts `salla` on yo
 
 ### 3. Point the project at your app
 
-Grab the app ID from the [Partner Portal](https://salla.partners/) and put it in `.env` so
-you don't have to pass it on every command:
+Copy the example env file and fill in your app ID, so you don't have to pass it on every
+command:
 
 ```bash
-SALLA_APP_ID=1234567890
+cp .env.example .env
 ```
+
+```bash
+# .env
+SALLA_APP_ID=1234567890                 # from the portal, or `salla app list`
+```
+
+`.env` is gitignored and configures **the CLI on your machine** — it is not shipped to the
+deployed function. Per-merchant secrets belong in your app's settings form, which reaches
+your handler as [`context.settings`](#the-context-object).
 
 ### 4. Build, deploy, observe
 
@@ -205,6 +217,7 @@ test/
   index.spec.ts           # example tests for the handlers
 dist/
   index.js                # build output (generated; deployed artifact)
+.env.example              # template for CLI config — copy to .env
 ```
 
 ## Event reference
@@ -441,4 +454,3 @@ Build and deploy go through the CLI, not npm scripts.
 ## License
 
 [MIT](LICENSE) © Salla
-
