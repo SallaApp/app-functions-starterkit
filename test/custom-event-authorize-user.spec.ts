@@ -24,8 +24,8 @@ const ctx = (
   }) as SallaCustomEvent;
 
 /** Stubs `fetch` and hands back the spy so a test can assert it never ran. */
-const stubFetch = (ok: boolean, status = ok ? 200 : 401) => {
-  const spy = vi.fn(async () => ({ ok, status }));
+const stubFetch = (ok: boolean, body: unknown = { active: true }, status = ok ? 200 : 401) => {
+  const spy = vi.fn(async () => ({ ok, status, json: async () => body }));
   vi.stubGlobal('fetch', spy);
   return spy;
 };
@@ -57,7 +57,8 @@ describe('custom.event.authorize.user', () => {
 
     const response = await customEventAuthorizeUser(ctx());
 
-    expect(fetchSpy).toHaveBeenCalledWith('https://mock_url.com/verify-token', {
+    expect(fetchSpy).toHaveBeenCalledWith('https://example.com/verify-token', {
+      redirect: 'error',
       headers: { Authorization: 'Bearer good' }
     });
     expect(response).toMatchObject({ success: true, status: 200 });
@@ -65,6 +66,22 @@ describe('custom.event.authorize.user', () => {
 
   test('returns 401 when the verifier rejects the token', async () => {
     stubFetch(false);
+
+    const response = await customEventAuthorizeUser(ctx());
+
+    expect(response).toMatchObject({ success: false, status: 401 });
+  });
+
+  test('returns 401 on `200 {"active": false}` — a healthy verifier still saying no', async () => {
+    stubFetch(true, { active: false });
+
+    const response = await customEventAuthorizeUser(ctx());
+
+    expect(response).toMatchObject({ success: false, status: 401 });
+  });
+
+  test('returns 401 when the body never asserts the token is active', async () => {
+    stubFetch(true, {});
 
     const response = await customEventAuthorizeUser(ctx());
 
