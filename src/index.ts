@@ -7,6 +7,7 @@
  * just the handlers this map points at.
  */
 import type { DefineEvents } from '@salla.sa/app-functions-types';
+import { customEventAuthorizeUser } from './functions/custom-event-authorize-user';
 import { customEventSync } from './functions/custom-event-sync';
 import { customerLogin } from './functions/customer-login';
 import { orderCreated } from './functions/order-created';
@@ -35,7 +36,11 @@ const defineEvents: DefineEvents = (events) => events;
 const events = defineEvents({
   'order.created': orderCreated,
   'customer.login': customerLogin,
-  'custom.event.sync': customEventSync
+  'custom.event.sync': customEventSync,
+  // Same custom event contract, but deployed as a protected function — the
+  // handler verifies `context.authorization` before it does any work. Any
+  // suffix after `custom.event.` is yours to choose; nothing else to register.
+  'custom.event.authorize.user': customEventAuthorizeUser
 });
 
 // The Salla runtime imports this default export and dispatches every event to its handler.

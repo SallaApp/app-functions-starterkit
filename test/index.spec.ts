@@ -108,7 +108,12 @@ describe('partner events map', () => {
   test('registers exactly the expected event handlers', () => {
     // Keep this in sync with `src/index.ts` — it's a cheap guard against
     // accidentally removing (or forgetting to register) a handler.
-    expect(Object.keys(events).sort()).toEqual(['customer.login', 'order.created']);
+    expect(Object.keys(events).sort()).toEqual([
+      'custom.event.authorize.user',
+      'custom.event.sync',
+      'customer.login',
+      'order.created'
+    ]);
   });
 
   test('order.created returns a success response with the order summary', async () => {
