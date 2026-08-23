@@ -110,6 +110,32 @@ describe('custom.event.authorize.user — where the credential may be sent', () 
     expect(await customEventAuthorizeUser(ctx({}))).toMatchObject({ success: false, status: 500 });
     expect(spy).not.toHaveBeenCalled();
   });
+
+  test('asks fetch to fail rather than follow a redirect', async () => {
+    // Only the initial URL is allowlisted, so following a redirect would let an
+    // approved verifier hand the request to a host that never was. Pin the
+    // option so it cannot be dropped in a later edit.
+    const spy = stubFetch({ active: true });
+
+    await customEventAuthorizeUser(ctx(ALLOWED));
+
+    const [, init] = spy.mock.calls[0] as unknown as [URL, RequestInit];
+    expect(init.redirect).toBe('error');
+  });
+
+  test('a redirecting verifier fails closed instead of trusting the new host', async () => {
+    // What `redirect: 'error'` produces at runtime: fetch rejects, so the
+    // handler must refuse rather than read an answer from wherever it landed.
+    const spy = vi.fn(async () => {
+      throw new TypeError('unexpected redirect');
+    });
+    vi.stubGlobal('fetch', spy);
+
+    const res = await customEventAuthorizeUser(ctx(ALLOWED));
+
+    expect(res).toMatchObject({ success: false });
+    expect(res.success).toBe(false);
+  });
 });
 
 describe('custom.event.authorize.user — the authorization gate', () => {

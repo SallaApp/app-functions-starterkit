@@ -66,8 +66,16 @@ const verifyCaller = async (verifyUrl: URL, token: string): Promise<FunctionResp
   try {
     // Pass the credential through untouched — `token` already carries its
     // scheme, so it goes on the wire exactly as the caller sent it.
+    //
+    // `redirect: 'error'` matters as much as the allowlist above: only the
+    // *initial* URL is checked, so following a redirect would let an approved
+    // verifier hand the request — and the answer we trust — to a host that was
+    // never approved. A `{"active": true}` from a redirect target would then
+    // authorize any token at all. A verifier that redirects is a
+    // misconfiguration, so treat it as a failure rather than chase it.
     const verification = await fetch(verifyUrl, {
       method: 'GET',
+      redirect: 'error',
       headers: { Authorization: token, Accept: 'application/json' }
     });
 
