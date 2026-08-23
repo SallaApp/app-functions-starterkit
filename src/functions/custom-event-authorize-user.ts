@@ -1,35 +1,5 @@
 import type { FunctionResponse, SallaCustomEvent } from '@salla.sa/app-functions-types';
 
-/**
- * The authorization block the platform forwards for a protected custom event.
- *
- * TODO(PO-3064): delete this local declaration and read the types straight from
- * `@salla.sa/app-functions-types` once the package publishes a version that
- * includes them (https://github.com/SallaApp/app-functions-types/pull/21).
- * The installed 0.5.0 doesn't have them yet, so `context.authorization` would
- * not compile without this. The shape below matches the PR exactly, so the
- * intersection keeps compiling after the bump — then it can just go away.
- *
- * Note: more keys may be added to this object later, so treat it as extensible
- * and only rely on the keys you explicitly handle.
- */
-interface CustomEventAuthorization {
-  /**
-   * `true` when the function is deployed as a protected function, meaning the
-   * caller is expected to send a credential that your function must verify.
-   * `false` (or a missing `authorization` object) means the endpoint is public.
-   */
-  is_protected_function: boolean;
-  /** The raw credential sent by the caller, e.g. `"Bearer xxxx"`. */
-  token?: string;
-  /** The authorization scheme of the credential, e.g. `"Bearer"`. */
-  scheme?: string;
-}
-
-type ProtectedCustomEvent<T = unknown> = SallaCustomEvent<T> & {
-  authorization?: CustomEventAuthorization;
-};
-
 /** Shorthand for the error half of the envelope — the same `message` both places. */
 const fail = (status: number, message: string): FunctionResponse => ({
   success: false,
@@ -96,7 +66,7 @@ const verifyCaller = async (verifyUrl: string, token: string): Promise<FunctionR
  * returns a `Promise<FunctionResponse>` — the platform awaits it either way.
  */
 export const customEventAuthorizeUser = async (
-  context: ProtectedCustomEvent
+  context: SallaCustomEvent
 ): Promise<FunctionResponse> => {
   const { authorization } = context;
 
