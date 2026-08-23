@@ -1,15 +1,5 @@
 import type { FunctionResponse, SallaCustomEvent } from '@salla.sa/app-functions-types';
 
-// Mock verification API — replace with your own.
-const VERIFY_URL = 'https://mock_url.com/verify-token';
-
-const unAuthorized = (message: string): FunctionResponse => ({
-  success: false,
-  status: 401,
-  message,
-  error: { message }
-});
-
 /**
  * Handler for the `custom.event.authorize.user` event.
  *
@@ -19,6 +9,16 @@ const unAuthorized = (message: string): FunctionResponse => ({
 export const customEventAuthorizeUser = async (
   context: SallaCustomEvent
 ): Promise<FunctionResponse> => {
+  // Mock verification API — replace with your own.
+  const VERIFY_URL = 'https://mock_url.com/verify-token';
+
+  const unAuthorized = (message: string): FunctionResponse => ({
+    success: false,
+    status: 401,
+    message,
+    error: { message }
+  });
+
   const { authorization } = context;
 
   if (!authorization?.is_protected_function || !authorization.token) {
