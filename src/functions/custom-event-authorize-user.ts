@@ -26,20 +26,28 @@ export const customEventAuthorizeUser = async (
     return unAuthorized('Unauthorized');
   }
 
-  const verification = await fetch(VERIFY_URL, {
-    // Don't follow redirects: the token must only ever reach VERIFY_URL.
-    redirect: 'error',
-    headers: { Authorization: authorization.token }
-  });
+  let result: { active?: unknown };
 
-  if (!verification.ok) {
-    return unAuthorized('Invalid authorization token');
+  // A verifier that is unreachable, redirects, or answers with something
+  // unreadable must fail closed — never let the rejection escape the handler.
+  try {
+    const verification = await fetch(VERIFY_URL, {
+      // Don't follow redirects: the token must only ever reach VERIFY_URL.
+      redirect: 'error',
+      headers: { Authorization: authorization.token }
+    });
+
+    if (!verification.ok) {
+      return unAuthorized('Invalid authorization token');
+    }
+
+    result = await verification.json();
+  } catch {
+    return unAuthorized('Could not verify the authorization token');
   }
 
   // A 2xx is not the answer — the body is. A verifier replies 200 with
   // `{"active": false}` for an expired or revoked token, so require a clear yes.
-  const result = await verification.json();
-
   if (result?.active !== true) {
     return unAuthorized('Invalid authorization token');
   }

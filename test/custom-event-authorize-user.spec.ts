@@ -23,9 +23,27 @@ const ctx = (
     authorization: authorization ?? undefined
   }) as SallaCustomEvent;
 
-/** Stubs `fetch` and hands back the spy so a test can assert it never ran. */
+/** Stubs `fetch` and hands back the spy so a test can assert it never ran.
+ *  Pass an `Error` as `body` to make reading the response reject. */
 const stubFetch = (ok: boolean, body: unknown = { active: true }, status = ok ? 200 : 401) => {
-  const spy = vi.fn(async () => ({ ok, status, json: async () => body }));
+  const spy = vi.fn(async () => ({
+    ok,
+    status,
+    json: async () => {
+      if (body instanceof Error) throw body;
+      return body;
+    }
+  }));
+  vi.stubGlobal('fetch', spy);
+  return spy;
+};
+
+/** Stubs a `fetch` that rejects outright — an unreachable verifier, or a
+ *  redirect refused by `redirect: 'error'`. */
+const stubFetchRejecting = () => {
+  const spy = vi.fn(async () => {
+    throw new TypeError('fetch failed');
+  });
   vi.stubGlobal('fetch', spy);
   return spy;
 };
@@ -82,6 +100,23 @@ describe('custom.event.authorize.user', () => {
 
   test('returns 401 when the body never asserts the token is active', async () => {
     stubFetch(true, {});
+
+    const response = await customEventAuthorizeUser(ctx());
+
+    expect(response).toMatchObject({ success: false, status: 401 });
+  });
+
+  test('fails closed when the verifier is unreachable or redirects', async () => {
+    stubFetchRejecting();
+
+    // The rejection must never escape — the runtime always gets an envelope.
+    const response = await customEventAuthorizeUser(ctx());
+
+    expect(response).toMatchObject({ success: false, status: 401 });
+  });
+
+  test('fails closed when the verifier body cannot be read', async () => {
+    stubFetch(true, new SyntaxError('Unexpected token < in JSON'));
 
     const response = await customEventAuthorizeUser(ctx());
 
