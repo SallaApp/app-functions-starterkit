@@ -9,6 +9,48 @@ const fail = (status: number, message: string): FunctionResponse => ({
 });
 
 /**
+ * The only hosts this function will ever send the caller's credential to.
+ *
+ * **Replace these with your own and keep the list here, in code.** The URL
+ * itself comes from `context.settings` so each merchant can point at their own
+ * tenant or path — but a merchant-supplied value must never be the thing that
+ * decides *who gets the credential*. If it were, a mistyped or tampered setting
+ * would be enough to hand every caller's token to an attacker's server, or to
+ * turn this function into a probe against internal addresses it can reach.
+ * Pinning the host in code keeps that decision yours.
+ */
+const ALLOWED_VERIFIER_HOSTS = ['auth.example.com'];
+
+/**
+ * Turns the merchant-supplied setting into a URL that is safe to send a
+ * credential to, or `null` if it isn't one.
+ *
+ * Requires HTTPS (a credential must never travel in plaintext), rejects
+ * user:password embedded in the URL, and demands the host be one you listed
+ * above.
+ */
+const resolveVerifierUrl = (raw: unknown): URL | null => {
+  if (typeof raw !== 'string' || !raw) return null;
+
+  let url: URL;
+  try {
+    url = new URL(raw);
+  } catch {
+    return null;
+  }
+
+  if (url.protocol !== 'https:') return null;
+  if (url.username || url.password) return null;
+  if (!ALLOWED_VERIFIER_HOSTS.includes(url.hostname)) return null;
+
+  return url;
+};
+
+/** RFC 7662 introspection answers `{"active": true}` for a usable credential. */
+const isActive = (body: unknown): boolean =>
+  typeof body === 'object' && body !== null && (body as { active?: unknown }).active === true;
+
+/**
  * Passes the caller's credential through to a verification endpoint and reports
  * whether it checked out. Returns `null` when the credential is good, or the
  * error response to send back when it isn't.
@@ -18,7 +60,9 @@ const fail = (status: number, message: string): FunctionResponse => ({
  * Note it is *your* API, not Salla's: calls to `api.salla.dev` are authenticated
  * for you and must not carry an `Authorization` header.
  */
-const verifyCaller = async (verifyUrl: string, token: string): Promise<FunctionResponse | null> => {
+const verifyCaller = async (verifyUrl: URL, token: string): Promise<FunctionResponse | null> => {
+  let body: unknown;
+
   try {
     // Pass the credential through untouched — `token` already carries its
     // scheme, so it goes on the wire exactly as the caller sent it.
@@ -29,17 +73,28 @@ const verifyCaller = async (verifyUrl: string, token: string): Promise<FunctionR
 
     if (!verification.ok) {
       // Log the outcome, never the credential itself.
-      console.warn(`Authorization token rejected by ${verifyUrl} (HTTP ${verification.status})`);
+      console.warn(`Verifier rejected the token (HTTP ${verification.status})`);
       return fail(401, 'Invalid authorization token');
     }
 
-    return null;
+    body = await verification.json();
   } catch (error) {
-    // A verification service that is down must fail closed — treat it as "not
-    // authorized" rather than letting the request through.
+    // A verifier that is down or answers with something unreadable must fail
+    // closed — treat it as "not authorized" rather than letting the caller in.
     console.error('Could not verify the authorization token', error);
     return fail(503, 'Could not verify the authorization token');
   }
+
+  // A 2xx is *not* proof the credential is good. An introspection endpoint
+  // answers `200 {"active": false}` for a token that is expired, revoked or
+  // simply unknown, so a status-only check would wave those straight through.
+  // Demand an explicit yes; anything else is a no.
+  if (!isActive(body)) {
+    console.warn('Verifier reported the token as inactive');
+    return fail(401, 'Invalid authorization token');
+  }
+
+  return null;
 };
 
 /**
@@ -56,8 +111,15 @@ const verifyCaller = async (verifyUrl: string, token: string): Promise<FunctionR
  * Deciding whether that credential is good is yours to do, so this example
  * passes it straight through to a verification endpoint of your choosing —
  * your own auth service, an OAuth introspection endpoint, whatever issued the
- * token in the first place. Only if that call says the credential is valid do
- * we run the same body as the public `custom.event.sync` example.
+ * token in the first place. Only if that endpoint gives an explicit yes do we
+ * run the same body as the public `custom.event.sync` example.
+ *
+ * Two things this template is deliberate about, because sending someone's
+ * credential somewhere is easy to get wrong:
+ *   • it only ever sends the token to a host listed in
+ *     `ALLOWED_VERIFIER_HOSTS` below — edit that list before you deploy;
+ *   • it reads the verifier's *answer*, not just its HTTP status, since a
+ *     healthy endpoint returns `200` while saying the token is invalid.
  *
  * The suffix after `custom.event.` is entirely yours to pick, so a handler like
  * this needs no registration beyond the entry in `src/index.ts`.
@@ -83,13 +145,13 @@ export const customEventAuthorizeUser = async (
     return fail(401, 'Missing authorization token');
   }
 
-  // Point this at whichever endpoint can vouch for the credential. It's read
-  // from `context.settings` — the app's settings form — so each merchant can
-  // supply their own, and no URL or secret is ever hardcoded here.
-  const verifyUrl = context.settings?.verify_url;
+  // Which endpoint vouches for the credential is per-merchant, read from the
+  // app's settings form — but only after it has been checked against the hosts
+  // allowed above, so a bad setting can't redirect the token somewhere else.
+  const verifyUrl = resolveVerifierUrl(context.settings?.verify_url);
 
-  if (typeof verifyUrl !== 'string' || !verifyUrl) {
-    console.error('No `verify_url` configured in the app settings');
+  if (!verifyUrl) {
+    console.error('`verify_url` is missing, not HTTPS, or not an allowed verifier host');
     return fail(500, 'Authorization is not configured for this app');
   }
 
