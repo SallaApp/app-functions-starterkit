@@ -13,8 +13,6 @@ export const customEventAuthorizeUser = async (
   // IANA, so an unchanged deployment can never send tokens to someone's server.
   const VERIFY_URL = 'https://example.com/verify-token';
 
-  // Keep well inside the platform's execution budget, so a slow verifier ends
-  // in a 401 rather than the invocation being killed.
   const VERIFY_TIMEOUT_MS = 5_000;
 
   const unAuthorized = (message: string): FunctionResponse => ({
@@ -32,7 +30,6 @@ export const customEventAuthorizeUser = async (
 
   let result: { active?: unknown };
 
-  // Unreachable, redirecting, stalling or unreadable — every one fails closed.
   try {
     const verification = await fetch(VERIFY_URL, {
       redirect: 'error', // the token must only ever reach VERIFY_URL
@@ -49,8 +46,6 @@ export const customEventAuthorizeUser = async (
     return unAuthorized('Could not verify the authorization token');
   }
 
-  // A 2xx is not the answer, the body is: a verifier replies 200 with
-  // `{"active": false}` for an expired or revoked token.
   if (result?.active !== true) {
     return unAuthorized('Invalid authorization token');
   }
