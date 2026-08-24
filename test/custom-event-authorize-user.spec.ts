@@ -77,9 +77,36 @@ describe('custom.event.authorize.user', () => {
 
     expect(fetchSpy).toHaveBeenCalledWith('https://example.com/verify-token', {
       redirect: 'error',
+      signal: expect.any(AbortSignal),
       headers: { Authorization: 'Bearer good' }
     });
     expect(response).toMatchObject({ success: true, status: 200 });
+  });
+
+  test('bounds the verifier call with a deadline', async () => {
+    // Without this the handler would await a stalled verifier until the
+    // platform killed the invocation, so pin the signal against a later edit.
+    const fetchSpy = stubFetch(true);
+
+    await customEventAuthorizeUser(ctx());
+
+    const [, init] = fetchSpy.mock.calls[0] as unknown as [string, RequestInit];
+    expect(init.signal).toBeInstanceOf(AbortSignal);
+  });
+
+  test('fails closed when the verifier stalls past the deadline', async () => {
+    // What the timeout produces at runtime: fetch rejects with a TimeoutError
+    // rather than hanging, so the handler still returns an envelope.
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => {
+        throw new DOMException('The operation was aborted due to timeout', 'TimeoutError');
+      })
+    );
+
+    const response = await customEventAuthorizeUser(ctx());
+
+    expect(response).toMatchObject({ success: false, status: 401 });
   });
 
   test('returns 401 when the verifier rejects the token', async () => {
