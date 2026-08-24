@@ -1,0 +1,39 @@
+name-template: "$RESOLVED_VERSION"
+tag-template: "$RESOLVED_VERSION"
+categories:
+  - title: "🚀 Features"
+    labels:
+      - "feature"
+  - title: "🐛 Bug Fixes"
+    labels:
+      - "bugfix"
+  - title: "🧰 Maintenance"
+    label: "chore"
+  - title: "🚨 Brake Change"
+    label: "🚨 Brake Change"
+change-template: "* $TITLE @$AUTHOR (#$NUMBER)"
+no-changes-template: "New Release"
+replacers:
+  - search: "/.+:\s?/g"
+    replace: "* "
+  - search: " @github-actions"
+    replace: ""
+sort-by: "title"
+sort-direction: "ascending"
+version-resolver:
+  major:
+    labels:
+      - "🚨 Brake Change"
+  minor:
+    labels:
+      - "feature"
+  patch:
+    labels:
+      - "bugfix"
+  default: patch
+exclude-labels:
+  - "skip-changelog"
+  - "ignore"
+template: |
+  ## Changelog
+  $CHANGES
