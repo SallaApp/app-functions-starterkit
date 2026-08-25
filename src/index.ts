@@ -37,9 +37,6 @@ const events = defineEvents({
   'order.created': orderCreated,
   'customer.login': customerLogin,
   'custom.event.sync': customEventSync,
-  // Same custom event contract, but deployed as a protected function — the
-  // handler verifies `context.authorization` before it does any work. Any
-  // suffix after `custom.event.` is yours to choose; nothing else to register.
   'custom.event.authorize.user': customEventAuthorizeUser
 });
 

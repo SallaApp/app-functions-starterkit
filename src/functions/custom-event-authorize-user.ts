@@ -9,55 +9,52 @@ import type { FunctionResponse, SallaCustomEvent } from '@salla.sa/app-functions
 export const customEventAuthorizeUser = async (
   context: SallaCustomEvent
 ): Promise<FunctionResponse> => {
-  // Mock verification API — replace with your own. example.com is reserved by
-  // IANA, so an unchanged deployment can never send tokens to someone's server.
+  // Mock verification API, replace with your own.
   const VERIFY_URL = 'https://example.com/verify-token';
 
-  const VERIFY_TIMEOUT_MS = 5_000;
-
-  const unAuthorized = (message: string): FunctionResponse => ({
-    success: false,
-    status: 401,
-    message,
-    error: { message }
-  });
-
   const { authorization } = context;
+  const token = authorization?.token;
 
-  if (!authorization?.is_protected_function || !authorization.token) {
-    return unAuthorized('Unauthorized');
+  const baseErrorResponse = {
+    success: false,
+    status: 401
+  };
+
+  if (!authorization?.is_protected_function || !token) {
+    return {
+      ...baseErrorResponse,
+      message: 'Unauthorized',
+      error: { message: 'Unauthorized' }
+    };
   }
 
-  let result: { active?: unknown };
-
+  let verifiedClaims;
   try {
-    const verification = await fetch(VERIFY_URL, {
-      redirect: 'error', // the token must only ever reach VERIFY_URL
-      signal: AbortSignal.timeout(VERIFY_TIMEOUT_MS),
-      headers: { Authorization: authorization.token }
+    const response = await fetch(VERIFY_URL, {
+      headers: { Authorization: token }
     });
 
-    if (!verification.ok) {
-      return unAuthorized('Invalid authorization token');
+    if (!response.ok) {
+      return {
+        ...baseErrorResponse,
+        message: 'Invalid authorization token',
+        error: { message: 'Invalid authorization token' }
+      };
     }
 
-    result = await verification.json();
+    verifiedClaims = await response.json();
   } catch {
-    return unAuthorized('Could not verify the authorization token');
+    return {
+      ...baseErrorResponse,
+      message: 'Could not verify the authorization token',
+      error: { message: 'Could not verify the authorization token' }
+    };
   }
-
-  if (result?.active !== true) {
-    return unAuthorized('Invalid authorization token');
-  }
-
-  const eventData = context.payload.data;
-
-  console.log(`Custom event received with data: ${JSON.stringify(eventData)}`);
 
   return {
     success: true,
     status: 200,
-    message: `Custom event invoked successfully.`,
-    data: { foo: 'bar' }
+    message: `User token verified successfully.`,
+    data: verifiedClaims
   };
 };
