@@ -1,7 +1,18 @@
 import type { FunctionResponse, SallaCustomEvent } from '@salla.sa/app-functions-types';
 
 /**
- * Handler for the `custom.event.authorize.user` event.
+ * Builds a failed `FunctionResponse`. The envelope carries the same text twice —
+ * once as `message`, once inside `error` — so this keeps the two from drifting.
+ */
+const failed = (status: number, message: string): FunctionResponse => ({
+  success: false,
+  status,
+  message,
+  error: { message }
+});
+
+/**
+ * Handler for the `custom.event.authorize-user` event.
  *
  * Protected function: the platform forwards the caller's credential on
  * `context.authorization`, and this handler verifies it before doing any work.
@@ -15,17 +26,8 @@ export const customEventAuthorizeUser = async (
   const { authorization } = context;
   const token = authorization?.token;
 
-  const baseErrorResponse = {
-    success: false,
-    status: 401
-  };
-
   if (!authorization?.is_protected_function || !token) {
-    return {
-      ...baseErrorResponse,
-      message: 'Unauthorized',
-      error: { message: 'Unauthorized' }
-    };
+    return failed(401, 'Unauthorized');
   }
 
   let verifiedClaims;
@@ -35,20 +37,12 @@ export const customEventAuthorizeUser = async (
     });
 
     if (!response.ok) {
-      return {
-        ...baseErrorResponse,
-        message: 'Invalid authorization token',
-        error: { message: 'Invalid authorization token' }
-      };
+      return failed(401, 'Invalid authorization token');
     }
 
     verifiedClaims = await response.json();
   } catch {
-    return {
-      ...baseErrorResponse,
-      message: 'Could not verify the authorization token',
-      error: { message: 'Could not verify the authorization token' }
-    };
+    return failed(401, 'Could not verify the authorization token');
   }
 
   return {

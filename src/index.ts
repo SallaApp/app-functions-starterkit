@@ -37,7 +37,7 @@ const events = defineEvents({
   'order.created': orderCreated,
   'customer.login': customerLogin,
   'custom.event.sync': customEventSync,
-  'custom.event.authorize.user': customEventAuthorizeUser
+  'custom.event.authorize-user': customEventAuthorizeUser
 });
 
 // The Salla runtime imports this default export and dispatches every event to its handler.

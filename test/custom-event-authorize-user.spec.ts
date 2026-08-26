@@ -13,7 +13,7 @@ const ctx = (
 ): SallaCustomEvent =>
   ({
     payload: {
-      event: 'custom.event.authorize.user',
+      event: 'custom.event.authorize-user',
       created_at: '2026-01-01T00:00:00Z',
       merchant: 1234,
       data: { hello: 'world' }
@@ -50,7 +50,7 @@ const stubFetchRejecting = () => {
 
 afterEach(() => vi.unstubAllGlobals());
 
-describe('custom.event.authorize.user', () => {
+describe('custom.event.authorize-user', () => {
   test('refuses a request the platform did not mark protected', async () => {
     const fetchSpy = stubFetch(true);
 

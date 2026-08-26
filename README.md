@@ -36,6 +36,7 @@ typed event handlers that Salla executes for you when something happens in a sto
 - [Project structure](#project-structure)
 - [Event reference](#event-reference)
 - [Custom events](#custom-events)
+  - [Public and protected custom events](#public-and-protected-custom-events)
 - [Response envelope](#response-envelope)
 - [Calling Salla APIs](#calling-salla-apis)
 - [Testing](#testing)
@@ -306,6 +307,19 @@ The suffix is validated at compile time:
 | No consecutive hyphens                   | `custom.event.sync-v2`    | `custom.event.sync--v2`  |
 | Max 60 characters                        | —                         | a 61-char suffix         |
 
+> [!WARNING]
+> **The compiler is more permissive than the platform.** The type allows `.` in the suffix,
+> but the deploy API rejects it — use hyphens only. `custom.event.authorize.user` type-checks
+> and then fails at upload with:
+>
+> ```
+> HTTP 400 — Invalid custom event name "custom.event.authorize.user" — expected the exact
+> lowercase prefix "custom.event." followed by 1-60 characters of lowercase letters, numbers,
+> and single hyphens
+> ```
+>
+> Name it `custom.event.authorize-user` instead. `npm run typecheck` will not catch this.
+
 Custom events have no prebuilt context type, so describe your own payload using the shared
 building blocks the package exports:
 
@@ -332,6 +346,70 @@ export const nightlyInventorySync = (
   return { success: true, status: 200, data: { sku, quantity } };
 };
 ```
+
+### Public and protected custom events
+
+A custom event is reachable over HTTP, so the first thing to decide is who may call it.
+Both variants ship in `src/functions/`:
+
+|                         | [custom-event-sync.ts](src/functions/custom-event-sync.ts) | [custom-event-authorize-user.ts](src/functions/custom-event-authorize-user.ts) |
+| ----------------------- | ---------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| Deployed as             | public                                                     | protected                                                                      |
+| `context.authorization` | absent                                                     | populated by the platform                                                      |
+| Who can invoke it       | anyone with the URL                                        | only a caller whose credential you verify                                      |
+
+**Public** is the default. With no authorization check the endpoint is open — anyone who
+knows the URL can invoke it, and the payload is entirely caller-controlled. That is fine for
+genuinely public work, but never read a caller's identity out of the payload and never let a
+public function act on merchant data on the caller's behalf.
+
+**Protected** functions get an `authorization` block on the context. The caller puts a
+credential in the authorization header, and the platform forwards it to you:
+
+```ts
+authorization?: {
+  is_protected_function: boolean; // the function really is deployed as protected
+  token?: string;                 // the raw credential, e.g. "Bearer xxxx"
+  scheme?: string;                // its scheme, e.g. "Bearer"
+}
+```
+
+> [!IMPORTANT]
+> The platform **hands you** the credential; it does not validate it. Deciding whether the
+> token is good is your job — a handler that only checks `is_protected_function` is still
+> open to anyone who sends any header at all.
+
+So verify it, by calling whatever API can vouch for it — your own auth service, an OAuth
+introspection endpoint, whatever issued the token — passing the credential straight through:
+
+```ts
+const { authorization } = context;
+
+if (!authorization?.is_protected_function || !authorization.token) {
+  return { success: false, status: 401, message, error: { message } };
+}
+
+const verification = await fetch(VERIFY_URL, {
+  redirect: 'error',
+  signal: AbortSignal.timeout(VERIFY_TIMEOUT_MS),
+  headers: { Authorization: authorization.token }
+});
+```
+
+Four things the example handler is deliberate about, because sending someone's credential
+somewhere is easy to get wrong:
+
+- **A 2xx is not the answer, the body is.** An introspection endpoint replies
+  `200 {"active": false}` for an expired or revoked token, so a status-only check waves
+  those straight through.
+- **`redirect: 'error'`** keeps the token from following a redirect to some other host.
+- **`AbortSignal.timeout`** stops a stalled verifier from eating the execution budget — the
+  handler answers `401` instead of being killed mid-invocation.
+- **Fail closed.** Unreachable, redirecting, stalling, unreadable — every one of them is a
+  `401`, never a pass.
+
+`VERIFY_URL` in the example points at `example.com`, which IANA reserves, so an unedited
+deployment cannot send tokens to anyone's server. Replace it with your own before deploying.
 
 ## Response envelope
 

@@ -109,7 +109,7 @@ describe('partner events map', () => {
     // Keep this in sync with `src/index.ts` — it's a cheap guard against
     // accidentally removing (or forgetting to register) a handler.
     expect(Object.keys(events).sort()).toEqual([
-      'custom.event.authorize.user',
+      'custom.event.authorize-user',
       'custom.event.sync',
       'customer.login',
       'order.created'
