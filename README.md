@@ -396,17 +396,16 @@ const verification = await fetch(VERIFY_URL, {
 });
 ```
 
-Four things the example handler is deliberate about, because sending someone's credential
-somewhere is easy to get wrong:
+The example keeps the verification deliberately minimal — it is a template, not a finished
+auth integration. Before you rely on it, think about:
 
-- **A 2xx is not the answer, the body is.** An introspection endpoint replies
-  `200 {"active": false}` for an expired or revoked token, so a status-only check waves
-  those straight through.
-- **`redirect: 'error'`** keeps the token from following a redirect to some other host.
-- **`AbortSignal.timeout`** stops a stalled verifier from eating the execution budget — the
-  handler answers `401` instead of being killed mid-invocation.
-- **Fail closed.** Unreachable, redirecting, stalling, unreadable — every one of them is a
-  `401`, never a pass.
+- **What counts as a yes.** The example treats any `2xx` as valid. Real introspection
+  endpoints reply `200 {"active": false}` for an expired or revoked token, so if yours does,
+  check the body rather than the status.
+- **Where the token may travel.** `fetch` follows redirects by default, so an endpoint that
+  redirects will hand your caller's credential to whatever host it points at.
+- **How long you will wait.** `fetch` has no timeout. A verifier that accepts the connection
+  and then stalls will hold the invocation until the platform kills it.
 
 `VERIFY_URL` in the example points at `example.com`, which IANA reserves, so an unedited
 deployment cannot send tokens to anyone's server. Replace it with your own before deploying.
