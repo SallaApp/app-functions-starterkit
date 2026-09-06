@@ -7,6 +7,7 @@
  * just the handlers this map points at.
  */
 import type { DefineEvents } from '@salla.sa/app-functions-types';
+import { customEventAuthorizeUser } from './functions/custom-event-authorize-user';
 import { customEventSync } from './functions/custom-event-sync';
 import { customerLogin } from './functions/customer-login';
 import { orderCreated } from './functions/order-created';
@@ -35,7 +36,8 @@ const defineEvents: DefineEvents = (events) => events;
 const events = defineEvents({
   'order.created': orderCreated,
   'customer.login': customerLogin,
-  'custom.event.sync': customEventSync
+  'custom.event.sync': customEventSync,
+  'custom.event.authorize-user': customEventAuthorizeUser
 });
 
 // The Salla runtime imports this default export and dispatches every event to its handler.

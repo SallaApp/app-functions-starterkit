@@ -3,10 +3,8 @@ import type { FunctionResponse, SallaCustomEvent } from '@salla.sa/app-functions
 /**
  * Handler for the `custom.event.sync` event.
  *
- * Every handler follows the same contract: it receives the typed event
- * `context` (the custom event lives at `context.payload.data`) and returns a
- * `FunctionResponse` — either a success or an error. Handlers may also be
- * `async` and return a `Promise<FunctionResponse>`.
+ * Public function: no authorization check, so the endpoint is open. For the
+ * protected variant see `custom-event-authorize-user.ts`.
  */
 export const customEventSync = (context: SallaCustomEvent): FunctionResponse => {
   const eventData = context.payload.data;
