@@ -28,7 +28,7 @@ export const customEventAuthorizeUser = async (
   const { authorization } = context;
   const token = authorization?.token;
 
-  if (!authorization?.is_protected_function || !token) {
+  if (!token) {
     return failed(401, 'Unauthorized');
   }
 

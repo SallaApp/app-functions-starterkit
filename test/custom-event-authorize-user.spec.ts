@@ -6,7 +6,6 @@ import { customEventAuthorizeUser } from '../src/functions/custom-event-authoriz
  *  authorization block the platform would normally attach. */
 const ctx = (
   authorization: SallaCustomEvent['authorization'] | null = {
-    is_protected_function: true,
     token: 'Bearer good',
     scheme: 'Bearer'
   }
@@ -51,7 +50,7 @@ const stubFetchRejecting = () => {
 afterEach(() => vi.unstubAllGlobals());
 
 describe('custom.event.authorize-user', () => {
-  test('refuses a request the platform did not mark protected', async () => {
+  test('refuses a request with no authorization context', async () => {
     const fetchSpy = stubFetch(true);
 
     const response = await customEventAuthorizeUser(ctx(null));
@@ -61,10 +60,10 @@ describe('custom.event.authorize-user', () => {
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 
-  test('refuses a protected request that carried no token', async () => {
+  test.each([{}, { token: '' }])('refuses authorization without a token: %j', async (authorization) => {
     const fetchSpy = stubFetch(true);
 
-    const response = await customEventAuthorizeUser(ctx({ is_protected_function: true }));
+    const response = await customEventAuthorizeUser(ctx(authorization));
 
     expect(response).toMatchObject({ success: false, status: 401 });
     expect(fetchSpy).not.toHaveBeenCalled();

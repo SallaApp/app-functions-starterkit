@@ -368,7 +368,6 @@ credential in the authorization header, and the platform forwards it to you:
 
 ```ts
 authorization?: {
-  is_protected_function: boolean; // the function really is deployed as protected
   token?: string;                 // the raw credential, e.g. "Bearer xxxx"
   scheme?: string;                // its scheme, e.g. "Bearer"
 }
@@ -376,7 +375,7 @@ authorization?: {
 
 > [!IMPORTANT]
 > The platform **hands you** the credential; it does not validate it. Deciding whether the
-> token is good is your job — a handler that only checks `is_protected_function` is still
+> token is good is your job — a handler that only checks whether a token is present is still
 > open to anyone who sends any header at all.
 
 So verify it, by calling whatever API can vouch for it — your own auth service, an OAuth
@@ -385,7 +384,7 @@ introspection endpoint, whatever issued the token — passing the credential str
 ```ts
 const { authorization } = context;
 
-if (!authorization?.is_protected_function || !authorization.token) {
+if (!authorization?.token) {
   return { success: false, status: 401, message, error: { message } };
 }
 
