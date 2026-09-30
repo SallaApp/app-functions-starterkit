@@ -9,7 +9,7 @@ typed event handlers that Salla executes for you when something happens in a sto
 
 [![Salla CLI](https://img.shields.io/npm/v/@salla.sa/cli?label=%40salla.sa%2Fcli&color=004956)](https://www.npmjs.com/package/@salla.sa/cli)
 [![Types](https://img.shields.io/npm/v/@salla.sa/app-functions-types?label=app-functions-types&color=004956)](https://www.npmjs.com/package/@salla.sa/app-functions-types)
-[![Node](https://img.shields.io/badge/node-%E2%89%A522.12-5FA04E?logo=node.js&logoColor=white)](https://nodejs.org)
+[![Node](https://img.shields.io/badge/node-22%20%7C%2024%20%7C%2026%2B-5FA04E?logo=node.js&logoColor=white)](https://nodejs.org)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
 [**What are App Functions?**](https://docs.salla.dev/1726814m0) ·
@@ -81,7 +81,9 @@ execution time, and resources — see [the overview](https://docs.salla.dev/1726
 
 ### 1. Prerequisites
 
-- **Node.js ≥ 22.12** — the Salla CLI requires it (this project's own floor is 20.19).
+- **Node.js on the 22, 24 or 26+ release line** — exactly `^22.13.0 || ^24.0.0 || >=26.0.0`,
+  so on the 22 line you need 22.13 or newer. The Salla CLI needs ≥ 22.12; eslint 10 and
+  vitest 5 narrow it further, and neither supports the odd-numbered 23 and 25 lines.
 - A [Salla Partner account](https://salla.partners/).
 - **A Partner app** — App Functions always run on behalf of an app, so you need one before
   anything else here works. Create it either way:
