@@ -37,6 +37,7 @@ typed event handlers that Salla executes for you when something happens in a sto
 - [Event reference](#event-reference)
 - [Custom events](#custom-events)
   - [Public and protected custom events](#public-and-protected-custom-events)
+- [Cart discounts (synchronous)](#cart-discounts-synchronous)
 - [Response envelope](#response-envelope)
 - [Calling Salla APIs](#calling-salla-apis)
 - [Testing](#testing)
@@ -70,9 +71,9 @@ Which one you get is decided by the event, not by your code.
 
 > [!WARNING]
 > In a **synchronous** action a real person is staring at a spinner. Avoid slow external
-> API calls, heavy computation, and sequential round-trips. Everything storefront
-> customers trigger is asynchronous; today `shipment.creating` is the only synchronous
-> event ([shipment schemas](https://docs.salla.dev/1726835m0)).
+> API calls, heavy computation, and sequential round-trips. The synchronous events are
+> `shipment.creating` ([shipment schemas](https://docs.salla.dev/1726835m0)) and
+> `cart.discounts.calculate.run` ([cart discounts](#cart-discounts-synchronous)).
 
 App Functions are **free while in beta**. Future pricing will be based on call count,
 execution time, and resources — see [the overview](https://docs.salla.dev/1726817m0).
@@ -216,6 +217,7 @@ src/
   functions/              # one file per handler
     order-created.ts
     customer-login.ts
+    cart-discounts-calculate.ts
 test/
   index.spec.ts           # example tests for the handlers
 dist/
@@ -259,7 +261,7 @@ assigns them. Each row links to that category's payload schema.
 </details>
 
 <details>
-<summary><b>Storefront events</b> — platform category <code>ecommerce_events</code>, always async</summary>
+<summary><b>Storefront events</b> — platform category <code>ecommerce_events</code>, all async unless flagged</summary>
 
 <br>
 
@@ -268,7 +270,7 @@ assigns them. Each row links to that category's payload schema.
 | **Products**             | `product.viewed` · `product.clicked` · `product.shared` · `product.reviewed` · `products.searched`                                                                                        | [Product Events](https://docs.salla.dev/1726820m0)            |
 | **Product lists**        | `product.list.viewed` · `product.list.filtered` · `product.list.sorted`                                                                                                                   | [Product Events](https://docs.salla.dev/1726820m0)            |
 | **Product details**      | `product.price.updated` · `product.status.updated` · `product.brand.updated` · `product.category.updated` · `product.image.updated` · `product.tags.updated` · `product.channels.changed` | [Product Events](https://docs.salla.dev/1726820m0)            |
-| **Cart**                 | `cart.viewed` · `cart.updated` · `cart.shared` · `product.added` · `product.removed`                                                                                                      | [Cart & Checkout](https://docs.salla.dev/1726822m0)           |
+| **Cart**                 | `cart.viewed` · `cart.updated` · `cart.shared` · `product.added` · `product.removed` · ⚡ `cart.discounts.calculate.run` **(sync, [details](#cart-discounts-synchronous))** | [Cart & Checkout](https://docs.salla.dev/1726822m0)           |
 | **Checkout**             | `checkout.started` · `checkout.step.viewed` · `checkout.step.completed`                                                                                                                   | [Cart & Checkout](https://docs.salla.dev/1726822m0)           |
 | **Payment**              | `payment.info.entered` · `payment.submitted` · `payment.succeeded` · `payment.failed` · `payment.pending`                                                                                 | [Cart & Checkout](https://docs.salla.dev/1726822m0)           |
 | **Orders**               | `order.completed` · `ecommerce.order.updated` · `ecommerce.order.cancelled` · `ecommerce.order.refunded`                                                                                  | [Cart & Checkout](https://docs.salla.dev/1726822m0)           |
@@ -410,6 +412,81 @@ auth integration. Before you rely on it, think about:
 
 `VERIFY_URL` in the example points at `example.com`, which IANA reserves, so an unedited
 deployment cannot send tokens to anyone's server. Replace it with your own before deploying.
+
+## Cart discounts (synchronous)
+
+`cart.discounts.calculate.run` lets your app decide a discount for each cart. A merchant
+creates a normal special offer (fixed amount or percentage) in the Salla dashboard and links
+it to your app with two caps: a maximum amount and a maximum percentage. While the shopper's
+cart is priced, Salla calls your function, checks your answer, and applies it through the
+same offer engine as any other special offer, so offer priority, the store's offer limit and
+coupon rules still apply.
+
+### What you receive
+
+`context.payload.data`:
+
+| Field | Meaning |
+| ----- | ------- |
+| `context` | `cart` today (`checkout` and `submit` are reserved for later) |
+| `fingerprint` | Hash of everything below; the same cart gives the same fingerprint |
+| `offer.id`, `offer.caps.max_amount`, `offer.caps.max_percent` | The merchant's offer and its caps |
+| `cart.id`, `cart.currency_code`, `cart.channel`, `cart.market.scope_id`, `cart.tax_mode` | The cart |
+| `cart.entered_discount_codes` | Coupon codes the shopper entered |
+| `cart.lines[]` | `id`, `product_id`, `variant_id`, `quantity`, `unit_price`, `line_subtotal`, `remaining_amount` (after coupon), `categories`, `brand`, `tags` |
+| `buyer` | `customer_id`, `is_guest`, `customer_groups` |
+
+Prices are strings without tax. `context.settings` holds the merchant's app settings.
+
+### What you return
+
+```ts
+return {
+  success: true,
+  status: 200,
+  data: {
+    operations: [
+      { productDiscountsAdd: { selectionStrategy: 'ALL', candidates: [
+        { targets: [{ cartLine: { id: 1, quantity: 2 } }], value: { percentage: { value: '10' } },
+          message: { ar: 'خصم 10%', en: '10% off' } } ] } },
+      { orderDiscountsAdd: { selectionStrategy: 'FIRST', candidates: [
+        { targets: [{ orderSubtotal: { excludedCartLineIds: [] } }],
+          value: { fixedAmount: { amount: '15.00', currencyCode: 'SAR' } } } ] } }
+    ],
+    reference: 'your-quote-id',
+    ttl_seconds: 300
+  }
+};
+```
+
+- `value`: `percentage`, `fixedAmount`, or `fixedPrice` (the targeted units together cost `amount`).
+- `selectionStrategy`: `ALL` applies every candidate, `FIRST` the first that gives a discount, `MAXIMUM` the largest.
+- `operations: []` means no discount.
+
+### Rules Salla enforces
+
+- **Time:** answer within 800 ms. A timeout or an error gives no discount and checkout continues.
+- **Whole answer rejected (no discount)** when: the shape is wrong, there are more than 20 operations or more than 50 candidates in one operation, an operation type appears twice, a line id is not in the request, or a `currencyCode` differs from `cart.currency_code`.
+- **Single candidate dropped** (the rest still applies) when: a target quantity is not a whole number between 1 and the line quantity, a percentage is not above 0 and at most 100, or an amount is not a string with at most 2 decimals. An unknown `selectionStrategy` drops its operation.
+- **Ignored fields:** a `message` that is not a string or an `{ar, en}` map of up to 255 characters, and a `reference` longer than 100 characters, are dropped without rejecting the discount.
+- **Caps:** a line never goes below its `remaining_amount`, and the total is capped by the merchant's `max_amount` and `max_percent`.
+- **Caching:** your answer is cached per `fingerprint` for `ttl_seconds` (300 when missing, at most 300, not cached when 0). A rejected answer is cached for 60 seconds. App settings are not part of the fingerprint, so a settings change applies when the cache expires.
+- **Payment:** if your answer changes between checkout and payment, the shopper is asked to confirm the new price.
+- **Order edits:** editing an order reuses the amounts already paid; your function is not called again.
+
+### The example
+
+[`src/functions/cart-discounts-calculate.ts`](src/functions/cart-discounts-calculate.ts) gives a
+percentage off every line bought in bulk and a fixed amount off carts above a threshold. It
+makes no outbound calls, so it stays far inside the time budget. The merchant tunes it through
+app settings:
+
+| Setting | Default | Meaning |
+| ------- | ------- | ------- |
+| `bulk_min_quantity` | `2` | Units of one line needed for the bulk discount |
+| `bulk_percent` | `10` | Bulk discount percentage |
+| `order_threshold` | `300` | Cart value (after coupons) that unlocks the order discount |
+| `order_fixed_amount` | `15` | Order discount, in the cart currency |
 
 ## Response envelope
 
