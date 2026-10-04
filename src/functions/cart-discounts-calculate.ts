@@ -54,9 +54,9 @@ const orderOperation = (
   amount: string,
   currency: string
 ): CartDiscountOperation[] => {
-  const remaining = lines.reduce((sum, line) => sum + Number(line.remaining_amount), 0);
+  const remainingCents = lines.reduce((sum, line) => sum + Math.round(Number(line.remaining_amount) * 100), 0);
 
-  if (remaining < threshold) {
+  if (remainingCents < Math.round(threshold * 100)) {
     return [];
   }
 

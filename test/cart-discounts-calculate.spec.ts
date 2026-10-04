@@ -134,10 +134,24 @@ describe('cart.discounts.calculate.run', () => {
   test('sends percentages and amounts with at most 2 decimals', async () => {
     const result = await data(ctx([line(1, 2, '400.00')], { bulk_percent: 33.3333, order_fixed_amount: 12.345 }));
     const pattern = /^\d{1,12}(\.\d{1,2})?$/;
+    const [bulk, order] = result.operations as unknown as [
+      { productDiscountsAdd: { candidates: { value: { percentage: { value: string } } }[] } },
+      { orderDiscountsAdd: { candidates: { value: { fixedAmount: { amount: string } } }[] } }
+    ];
 
-    expect(result.operations[0]).toMatchObject({ productDiscountsAdd: { candidates: [{ value: { percentage: { value: '33.33' } } }] } });
-    expect(result.operations[1]).toMatchObject({ orderDiscountsAdd: { candidates: [{ value: { fixedAmount: { amount: '12.35' } } }] } });
-    expect('33.33').toMatch(pattern);
+    expect(bulk.productDiscountsAdd.candidates[0].value.percentage.value).toBe('33.33');
+    expect(bulk.productDiscountsAdd.candidates[0].value.percentage.value).toMatch(pattern);
+    expect(order.orderDiscountsAdd.candidates[0].value.fixedAmount.amount).toBe('12.35');
+    expect(order.orderDiscountsAdd.candidates[0].value.fixedAmount.amount).toMatch(pattern);
+  });
+
+  test('reaches the order threshold exactly without floating point drift', async () => {
+    const lines = Array.from({ length: 10 }, (_, index) => line(index + 1, 1, '0.10'));
+
+    const result = await data(ctx(lines, { order_threshold: 1, bulk_min_quantity: 5 }));
+
+    expect(result.operations).toHaveLength(1);
+    expect(result.operations[0]).toHaveProperty('orderDiscountsAdd');
   });
 
   test('returns a reference and a cache time Salla can use', async () => {
